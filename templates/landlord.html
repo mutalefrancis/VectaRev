@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>List Property | MyWay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --blue: #007AFF; --bg: #F2F2F7; --gray: #8E8E93; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); padding: 20px; margin: 0; }
+        .form-card { background: white; padding: 30px; border-radius: 35px; max-width: 500px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        h1 { font-size: 1.8rem; letter-spacing: -1.5px; margin-bottom: 5px; }
+        .field { margin-bottom: 20px; }
+        label { font-size: 0.7rem; font-weight: 800; color: var(--gray); text-transform: uppercase; margin-left: 10px; display: block; margin-bottom: 8px; }
+        input { width: 100%; padding: 18px; border-radius: 20px; border: 1.5px solid #F2F2F7; background: #FAFAFA; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--blue); background: #fff; }
+
+        .ios-picker-btn {
+            width: 100%; padding: 18px; border-radius: 20px; border: 1.5px solid #F2F2F7;
+            background: #FAFAFA; color: #1C1C1E; font-size: 16px; text-align: left;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent;
+        }
+
+        #iosSheet { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); }
+        .sheet-content { position: absolute; bottom: 20px; left: 10px; right: 10px; background: white; border-radius: 30px; padding: 25px; max-height: 75vh; overflow-y: auto; animation: slideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .option-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #F2F2F7; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .option-item input { width: 22px; height: 22px; margin-right: 15px; accent-color: var(--blue); width: auto; }
+        .btn-submit { width: 100%; padding: 22px; background: var(--blue); color: white; border: none; border-radius: 25px; font-weight: 800; font-size: 1rem; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="form-card">
+        <h1>Property Details</h1>
+        <p style="color:var(--gray); margin-bottom: 30px;">Complete the form to list your house.</p>
+        
+        <form method="POST" enctype="multipart/form-data">
+            <div class="field">
+                <label>Property Name</label>
+                <input type="text" name="name" placeholder="e.g. Hillview Lodge" required>
+            </div>
+
+            <div class="field">
+                <label>Nearby Institutions</label>
+                <button type="button" class="ios-picker-btn" onclick="toggleSheet()">
+                    <span id="selectedCount">Select Campuses</span>
+                    <span style="color:var(--blue); font-size: 1.2rem;">⊕</span>
+                </button>
+            </div>
+
+            <div class="field">
+                <label>Location / Area</label>
+                <input type="text" name="location" placeholder="e.g. Northmead" required>
+            </div>
+
+            <div class="field">
+                <label>Google Maps Link</label>
+                <input type="text" name="map_url" placeholder="Paste link here">
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <div class="field" style="flex:1;"><label>Price (K)</label><input type="number" name="price" required></div>
+                <div class="field" style="flex:1;"><label>Distance</label><input type="text" name="distance" placeholder="1km"></div>
+            </div>
+
+            <div class="field">
+                <label>WhatsApp Number</label>
+                <input type="text" name="phone" placeholder="260..." required>
+            </div>
+
+            <div class="field">
+                <label>Photos</label>
+                <input type="file" name="photos" multiple accept="image/*" style="border:none; background:none; padding-left:0;">
+            </div>
+
+            <button type="submit" class="btn-submit">Submit Property</button>
+        </form>
+    </div>
+
+    <div id="iosSheet">
+        <div class="sheet-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="margin:0; font-size:1.4rem; letter-spacing:-1px;">Institutions</h2>
+                <button type="button" onclick="toggleSheet()" style="background:none; border:none; color:var(--blue); font-weight:800; font-size:1rem; cursor:pointer;">Done</button>
+            </div>
+
+            <input type="text" id="schoolSearch" placeholder="🔍 Search campus..." onkeyup="filterSchools()" 
+                   style="margin-bottom:15px; background:#F2F2F7; border:none; border-radius:15px; padding:15px; box-sizing: border-box; width: 100%;">
+
+            <div id="schoolList">
+                {% for s in schools %}
+                <label class="option-item">
+                    <input type="checkbox" name="institution" value="{{ s.name }}" onchange="updateCount()">
+                    <span class="school-name-text">{{ s.name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSheet() {
+            const sheet = document.getElementById('iosSheet');
+            if (sheet.style.display === 'none' || sheet.style.display === '') {
+                sheet.style.display = 'block';
+                document.body.style.overflow = 'hidden'; 
+                document.getElementById('schoolSearch').focus();
+            } else {
+                sheet.style.display = 'none';
+                document.body.style.overflow = 'auto'; 
+            }
+        }
+
+        function updateCount() {
+            const checked = document.querySelectorAll('input[name="institution"]:checked');
+            const label = document.getElementById('selectedCount');
+            if (checked.length > 0) {
+                label.innerText = checked.length + " Selected";
+                label.style.color = "#007AFF";
+                label.style.fontWeight = "800";
+            } else {
+                label.innerText = "Select Campuses";
+                label.style.color = "#1C1C1E";
+                label.style.fontWeight = "400";
+            }
+        }
+
+        function filterSchools() {
+            let input = document.getElementById('schoolSearch').value.toLowerCase();
+            let items = document.getElementsByClassName('option-item');
+            for (let i = 0; i < items.length; i++) {
+                let text = items[i].querySelector('.school-name-text').innerText.toLowerCase();
+                items[i].style.display = text.includes(input) ? "flex" : "none";
+            }
+        }
+    </script>
+</body>
+</html>

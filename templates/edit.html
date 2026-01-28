@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Way</title>
+    <style>
+        :root { --blue: #007aff; --bg: #f2f2f7; }
+        body { margin:0; font-family:-apple-system, sans-serif; background: var(--bg); color:#1c1c1e; }
+        .header { background: var(--blue); color:white; padding:60px 20px 100px; text-align:center; border-radius:0 0 40px 40px; }
+        .overlap { position:relative; margin:-60px auto 20px; max-width:500px; padding:0 15px; }
+        .card { background:white; border-radius:30px; padding:20px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
+        .gallery { display: flex; overflow-x: auto; gap: 10px; margin: -20px -20px 15px -20px; padding: 10px; scroll-snap-type: x mandatory; }
+        .gallery::-webkit-scrollbar { display: none; }
+        .gallery img { width: 85%; height: 220px; object-fit: cover; border-radius: 20px; scroll-snap-align: center; flex-shrink: 0; }
+        .btn-map { background: #f2f2f7; color: #000; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.8rem; }
+        .btn-wa { background: #34c759; color: white; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 700; flex: 1; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1 style="font-size:2.2rem; font-weight:900; margin:0;">Find your spot.</h1></div>
+
+    <div class="overlap">
+        <div style="background:white; padding:18px; border-radius:20px; font-weight:800; display:flex; justify-content:space-between;">
+            <span>Available Houses</span><span>🏠</span>
+        </div>
+    </div>
+
+    <div style="max-width:500px; margin:0 auto; padding:0 15px;">
+        {% for h in houses %}
+        <div class="card">
+            <div class="gallery">
+                {% if h.images %}
+                    {% for img in h.images.split(',') %}
+                    <img src="{{ url_for('static', filename='uploads/' + img) }}">
+                    {% endfor %}
+                {% else %}
+                    <div style="width:100%; height:200px; background:#eee; border-radius:20px; display:flex; align-items:center; justify-content:center; color:#aaa;">No Photos</div>
+                {% endif %}
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:var(--blue); font-weight:bold; font-size:0.8rem;">{{ h.institution }}</span>
+                <span style="background:#34c759; color:white; padding:4px 10px; border-radius:8px; font-size:0.7rem; font-weight:bold;">{{ h.status }}</span>
+            </div>
+
+            <h2 style="margin:10px 0;">{{ h.name }}</h2>
+            <p style="color:#8e8e93; margin:0;">📍 {{ h.location }} • {{ h.distance }}</p>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; gap:10px;">
+                <div style="font-size:1.4rem; font-weight:900; color:var(--blue);">K{{ h.price }}</div>
+                
+                {% if h.map_url %}
+                <a href="{{ h.map_url }}" target="_blank" class="btn-map">Map</a>
+                {% endif %}
+                
+                <a href="https://wa.me/{{ h.phone }}" class="btn-wa">WhatsApp</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

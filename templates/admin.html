@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MyWay | Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --blue: #007AFF; --red: #FF3B30; --green: #34C759; --bg: #F2F2F7; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .container { max-width: 500px; margin: auto; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 20px; }
+        .header h1 { font-size: 1.3rem; margin: 0; }
+        
+        /* Section Titles */
+        .section-label { font-size: 0.75rem; color: #8E8E93; text-transform: uppercase; margin: 20px 0 10px 5px; font-weight: 800; }
+
+        /* Property Cards */
+        .item-card { background: white; border-radius: 24px; padding: 20px; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.03); border: 1px solid #E5E5EA; }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .item-name { font-size: 1.1rem; margin: 0; color: #1C1C1E; }
+        
+        .badge { padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 800; }
+        .badge-pending { background: #FFF9E6; color: #B08900; }
+        .badge-live { background: #E6F9EB; color: var(--green); }
+
+        .item-details { font-size: 0.85rem; color: #8E8E93; line-height: 1.5; }
+        
+        /* Action Buttons - BIG for Mobile */
+        .actions { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 16px; border-radius: 16px; border: none; font-weight: 800; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        .btn-approve { background: var(--blue); color: white; }
+        .btn-delete { background: #F2F2F7; color: var(--red); }
+        .btn:active { transform: scale(0.96); }
+
+        /* Bottom Menu */
+        .admin-box { background: #1C1C1E; color: white; padding: 25px; border-radius: 30px; margin-top: 40px; }
+        .input-dark { width: 100%; background: #2C2C2E; border: 1px solid #3A3A3C; color: white; padding: 15px; border-radius: 14px; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; }
+        
+        /* Pop-up Modal */
+        #schoolModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
+        .modal-body { background: white; margin: 20% auto; padding: 30px; width: 85%; border-radius: 35px; max-height: 60vh; overflow-y: auto; }
+        .school-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #F2F2F7; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>System Console</h1>
+            <a href="/admin/logout" style="color:var(--red); text-decoration:none; font-weight:700;">Logout</a>
+        </div>
+
+        <div class="section-label">Submissions for Review</div>
+        
+        {% if not houses %}
+        <div style="text-align:center; padding:40px; color:#8E8E93;">No new properties.</div>
+        {% endif %}
+
+        {% for h in houses %}
+        <div class="item-card">
+            <div class="card-top">
+                <h3 class="item-name">{{ h.name }}</h3>
+                <span class="badge {% if h.verified %}badge-live{% else %}badge-pending{% endif %}">
+                    {% if h.verified %}LIVE{% else %}NEEDS APPROVAL{% endif %}
+                </span>
+            </div>
+            
+            <div class="item-details">
+                📍 {{ h.location }}<br>
+                💰 K{{ h.price }} • 📞 {{ h.phone }}<br>
+                🏫 {{ h.institution }}
+            </div>
+
+            <form method="POST" class="actions">
+                <input type="hidden" name="id" value="{{ h.id }}">
+                
+                {% if not h.verified %}
+                <button type="submit" name="verify" class="btn btn-approve">Approve Post</button>
+                {% endif %}
+                
+                <button type="submit" name="delete" class="btn btn-delete" onclick="return confirm('Delete permanently?')">Delete</button>
+            </form>
+        </div>
+        {% endfor %}
+
+        <div class="admin-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="margin:0; font-size:1rem;">Institutions</h2>
+                <button onclick="toggleModal()" style="background:none; border:none; color:var(--blue); font-weight:800; font-size:0.8rem;">VIEW ALL ({{ schools|length }})</button>
+            </div>
+
+            <form method="POST">
+                <input type="text" name="school_name" class="input-dark" placeholder="Campus Name" required>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" name="lat" class="input-dark" placeholder="Lat">
+                    <input type="text" name="lng" class="input-dark" placeholder="Lng">
+                </div>
+                <button type="submit" name="add_school" class="btn btn-approve" style="width:100%;">Add New School</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="schoolModal">
+        <div class="modal-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="margin:0;">Campuses</h2>
+                <button onclick="toggleModal()" style="font-size:1.5rem; border:none; background:none; color:#8E8E93;">&times;</button>
+            </div>
+            {% for s in schools %}
+            <div class="school-row">
+                <span><strong>{{ s.name }}</strong></span>
+                <a href="/delete_school/{{ s.id }}" style="color:var(--red); text-decoration:none; font-weight:bold;">Delete</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function toggleModal() {
+            var m = document.getElementById("schoolModal");
+            m.style.display = (m.style.display === "block") ? "none" : "block";
+        }
+    </script>
+
+</body>
+</html>

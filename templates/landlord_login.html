@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Login | MyWay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Global reset to prevent protruding boxes */
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body { 
+            margin: 0; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: #F2F2F7; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            padding: 20px;
+        }
+
+        .login-card { 
+            background: white; 
+            width: 100%; 
+            max-width: 400px; 
+            padding: 40px 30px; 
+            border-radius: 40px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05); 
+            text-align: center; 
+        }
+
+        .logo { 
+            font-weight: 800; 
+            color: #007AFF; 
+            font-size: 1.5rem; 
+            margin-bottom: 10px; 
+        }
+
+        /* Fixed Input Styling */
+        input { 
+            width: 100%; 
+            padding: 18px; 
+            margin: 20px 0; 
+            border-radius: 15px; 
+            border: 1px solid #E5E5EA; 
+            background: #F2F2F7; 
+            font-size: 1.1rem; 
+            text-align: center; 
+            outline: none;
+            display: block; /* Ensures it takes its own line */
+        }
+
+        input:focus {
+            border-color: #007AFF;
+            background: #fff;
+        }
+
+        button { 
+            width: 100%; 
+            padding: 18px; 
+            border-radius: 15px; 
+            border: none; 
+            background: #007AFF; 
+            color: white; 
+            font-weight: 800; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .error { 
+            color: #FF3B30; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            margin-top: 15px; 
+            background: #FFE5E5;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .back-link {
+            display: block; 
+            margin-top: 25px; 
+            color: #8E8E93; 
+            text-decoration: none; 
+            font-size: 0.9rem; 
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">MYWAY</div>
+        <h2 style="margin:0;">Secure Access</h2>
+        <p style="color:#8E8E93; margin-top: 5px;">Enter your credentials to continue</p>
+        
+        <form method="POST">
+            {% if "admin" in request.path %}
+                <input type="password" name="admin_password" placeholder="Admin Password" autofocus required>
+            {% else %}
+                <input type="tel" name="hub_password" placeholder="Enter PIN" autofocus required>
+            {% endif %}
+            
+            <button type="submit">Unlock Portal</button>
+        </form>
+        
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        
+        <a href="/" class="back-link">← Back to App</a>
+    </div>
+</body>
+</html>
