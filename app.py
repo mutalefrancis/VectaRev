@@ -1,46 +1,36 @@
 import os, sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, flash
 from werkzeug.utils import secure_filename
-from PIL import Image  # Added for image optimization
+from PIL import Image
 
 app = Flask(__name__)
 app.secret_key = "myway_2026_full_control"
-UPLOAD_FOLDER = 'static/uploads'
+
+# --- PATH CONFIGURATION ---
+# This ensures Render finds your folders and database correctly
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
+DB_PATH = os.path.join(BASE_DIR, "database.db")
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit uploads to 16MB
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+# Ensure upload folder exists
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 # --- SETTINGS ---
 ADMIN_PASS = "202601"
 HUB_PIN = "5008"
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-# Helper: Optimize and Save Image
-def save_optimized_image(file):
-    unique_name = f"{os.urandom(3).hex()}_{secure_filename(file.filename.rsplit('.', 1)[0])}.webp"
-    path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
-    
-    img = Image.open(file)
-    # Convert to RGB if necessary (handles PNG transparency)
-    if img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
-    
-    # Resize to max-width 1200px (keeps quality but slashes file size)
-    img.thumbnail((1200, 1200))
-    img.save(path, "WEBP", quality=80)
-    return unique_name
-
-@app.route('/sw.js')
-def serve_sw():
-    return send_from_directory('.', 'sw.js', mimetype='application/javascript')
-
+# --- DATABASE HELPERS ---
 def get_db():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
+    """Builds the database tables if they are missing on the server."""
     with get_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS boarding (
@@ -58,11 +48,33 @@ def init_db():
         """)
         conn.commit()
 
+# --- TRIGGER INITIALIZATION ---
+# This is critical: It runs for Gunicorn on Render, not just local python
+init_db()
+
+# --- HELPER: IMAGE OPTIMIZER ---
+def save_optimized_image(file):
+    unique_name = f"{os.urandom(3).hex()}_{secure_filename(file.filename.rsplit('.', 1)[0])}.webp"
+    path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+    
+    img = Image.open(file)
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    
+    img.thumbnail((1200, 1200))
+    img.save(path, "WEBP", quality=80)
+    return unique_name
+
+# --- PWA SERVICE WORKER ROUTE ---
+@app.route('/sw.js')
+def serve_sw():
+    # Looks for sw.js in your 'static' folder
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
 # 1. STUDENT VIEW
 @app.route("/")
 def index():
     conn = get_db()
-    # Only show verified houses to students
     houses = conn.execute("SELECT * FROM boarding WHERE verified = 1 ORDER BY id DESC").fetchall()
     schools = conn.execute("SELECT * FROM schools ORDER BY name ASC").fetchall()
     conn.close()
@@ -86,7 +98,6 @@ def landlord():
         saved_names = []
         for file in files:
             if file and file.filename != '':
-                # Use our new optimizer!
                 try:
                     unique_name = save_optimized_image(file)
                     saved_names.append(unique_name)
@@ -127,7 +138,6 @@ def admin():
             conn.execute("UPDATE boarding SET verified = 1 WHERE id = ?", (house_id,))
             flash(f"House #{house_id} is now LIVE.", "success")
         elif "delete" in request.form:
-            # Cleanup: Find and delete images from folder before deleting record
             house = conn.execute("SELECT images FROM boarding WHERE id = ?", (house_id,)).fetchone()
             if house['images']:
                 for img_name in house['images'].split(','):
@@ -152,5 +162,4 @@ def admin_logout():
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True, port=5000, host='0.0.0.0')
